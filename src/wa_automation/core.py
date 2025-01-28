@@ -17,11 +17,10 @@ class WhatsAppAutomation:
     A class to automate WhatsApp Web operations using Selenium.
     
     Args:
-        webdriver_path (str, optional): Path to ChromeDriver. Defaults to using webdriver_manager.
         user_data_dir (str, optional): Path to store user data. Defaults to './User_Data'.
     """
     
-    def __init__(self, webdriver_path=None, user_data_dir=None):
+    def __init__(self, user_data_dir=None):
         self.user_data_dir = os.path.abspath(user_data_dir or "./User_Data")
         self.driver = None
         self.is_authenticated = False
@@ -106,7 +105,8 @@ class WhatsAppAutomation:
                     
         except Exception as e:
             raise WhatsAppLoadError(f"Error during initial WhatsApp Web load: {str(e)}")
-
+    
+          
     def send_message(self, number, message):
         """
         Send a text message to a WhatsApp number
@@ -279,10 +279,15 @@ class WhatsAppAutomation:
             WebDriverWait(self.driver, timeout).until(
                 EC.any_of(
                     EC.presence_of_element_located((By.CSS_SELECTOR, "div[aria-placeholder='Type a message']")),
+                    EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Phone number shared via url is invalid')]")),
                     EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-testid='chat']"))
                 )
             )
             time.sleep(3)
+            # Check for invalid number message
+            if self.driver.find_elements(By.XPATH, "//*[contains(text(), 'Phone number shared via url is invalid')]"):
+                logging.error("Invalid phone number detected")
+                raise MessageSendError("Invalid phone number detected")
             return True
         except:
             return False
