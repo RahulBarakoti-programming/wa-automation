@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "wa-automation" 
+version = "0.1.0" 
+authors = [
+  { name="Rahul Barakoti", email="rahulbarakoti5@gmail.com" },
+]
+description = "A Python library for WhatsApp Web automation"
+readme = "README.md"
+readme-content-type = "text/markdown"
+requires-python = ">=3.8"
+
+
+dependencies = [
+    "selenium>=4.0.0",
+    "webdriver-manager>=3.8.0",
+]
+
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+
+[project.urls]
+Homepage = "github.com/RahulBarakoti-programming/wa-automation"
+Issues = "github.com/RahulBarakoti-programming/wa-automation/issues"
+
+[tool.hatch.metadata]
+license = "MIT"
