@@ -141,7 +141,7 @@ class WhatsAppAutomation:
             time.sleep(1)
             
             send_button = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "span[data-icon='send']"))
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "button[aria-label='Send']"))
             )
             send_button.click()
             time.sleep(5)
@@ -171,7 +171,7 @@ class WhatsAppAutomation:
                 raise WhatsAppLoadError(f"Failed to load chat for number {number}")
 
             attach_button = WebDriverWait(self.driver, 20).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "span[data-icon='plus']"))
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "button[title='Attach']"))
             )
             attach_button.click()
             time.sleep(1)
@@ -198,7 +198,7 @@ class WhatsAppAutomation:
                 time.sleep(1)
 
             send_button = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "span[data-icon='send']"))
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "button[aria-label='Send']"))
             )
             send_button.click()
             time.sleep(5)
@@ -228,7 +228,7 @@ class WhatsAppAutomation:
                 raise WhatsAppLoadError(f"Failed to load chat for number {number}")
 
             attach_button = WebDriverWait(self.driver, 20).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "span[data-icon='plus']"))
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "button[title='Attach']"))
             )
             attach_button.click()
             time.sleep(1)
@@ -255,7 +255,7 @@ class WhatsAppAutomation:
                 time.sleep(1)
 
             send_button = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "span[data-icon='send']"))
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "button[aria-label='Send']"))
             )
             send_button.click()
             
