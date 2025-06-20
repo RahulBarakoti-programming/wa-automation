@@ -107,7 +107,7 @@ class WhatsAppAutomation:
             raise WhatsAppLoadError(f"Error during initial WhatsApp Web load: {str(e)}")
     
           
-    def send_message(self, number, message):
+    def send_message(self, number, message, wait_before_send=1, wait_after_send=5):
         """
         Send a text message to a WhatsApp number
         
@@ -138,20 +138,20 @@ class WhatsAppAutomation:
                 message_box, message
             )
             
-            time.sleep(1)
+            time.sleep(wait_before_send)
             
             send_button = WebDriverWait(self.driver, 10).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, "button[aria-label='Send']"))
             )
             send_button.click()
-            time.sleep(5)
+            time.sleep(wait_after_send)
             
             return True
             
         except Exception as e:
             raise MessageSendError(f"Failed to send message: {str(e)}")
 
-    def send_image(self, number, image_path, caption=None):
+    def send_image(self, number, image_path, caption=None,wait_before_send=1, wait_after_send=5):
         """
         Send an image with optional caption
         
@@ -195,20 +195,20 @@ class WhatsAppAutomation:
                     "{ bubbles: true, cancelable: true, inputType: 'insertText', data: arguments[1] }));",
                     caption_box, caption
                 )
-                time.sleep(1)
+                time.sleep(wait_before_send)  
 
             send_button = WebDriverWait(self.driver, 10).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, "button[aria-label='Send']"))
             )
             send_button.click()
-            time.sleep(5)
+            time.sleep(wait_after_send)
             
             return True
             
         except Exception as e:
             raise MessageSendError(f"Failed to send image: {str(e)}")
 
-    def send_file(self, number, file_path, caption=None):
+    def send_file(self, number, file_path, caption=None, wait_before_send=1, wait_after_send=5):
         """
         Send a file with optional caption
         
@@ -252,7 +252,7 @@ class WhatsAppAutomation:
                     "{ bubbles: true, cancelable: true, inputType: 'insertText', data: arguments[1] }));",
                     caption_box, caption
                 )
-                time.sleep(1)
+                time.sleep(wait_before_send) 
 
             send_button = WebDriverWait(self.driver, 10).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, "button[aria-label='Send']"))
@@ -267,7 +267,7 @@ class WhatsAppAutomation:
                 EC.presence_of_element_located((By.CSS_SELECTOR, "svg.x9tu13d.x1bndym7"))
             )
             
-            time.sleep(5)
+            time.sleep(wait_after_send)
             return True
             
         except Exception as e:
