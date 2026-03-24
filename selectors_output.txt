@@ -1,0 +1,69 @@
+WhatsApp Web Selector Inspector Results
+Generated at: 2026-01-27 20:04:30
+============================================================
+Starting WhatsApp Web Selector Inspector
+============================================================
+
+Opening WhatsApp Web...
+
+>>> SCAN QR CODE WITH YOUR PHONE <<<
+Waiting up to 120 seconds for login...
+
+LOGIN SUCCESSFUL!
+
+============================================================
+WHATSAPP WEB SELECTOR INSPECTION RESULTS
+============================================================
+
+--- SIDE PANEL / CHAT LIST ---
+FOUND: [aria-label='Chat list'] => {'aria-label': 'Chat list', 'role': 'grid', 'tag': 'div', 'class': 'x1y332i5 x1n2onr6 x6ikm8r x10wlt62 x1tiyuxx'}
+
+--- MESSAGE INPUT BOX ---
+FOUND: [contenteditable='true'][data-tab] => {'aria-label': 'Search input textbox', 'data-tab': '3', 'role': 'textbox', 'aria-placeholder': 'Search or start a new chat', 'contenteditable': 'true', 'tag': 'div', 'class': 'x1hx0egp x6ikm8r x1odjw0f x6prxxf x1k6rcq7 x1whj5v'}
+FOUND: [role='textbox'] => {'aria-label': 'Search input textbox', 'data-tab': '3', 'role': 'textbox', 'aria-placeholder': 'Search or start a new chat', 'contenteditable': 'true', 'tag': 'div', 'class': 'x1hx0egp x6ikm8r x1odjw0f x6prxxf x1k6rcq7 x1whj5v'}
+
+--- SEND BUTTON ---
+
+--- ATTACH BUTTON ---
+
+--- FILE INPUTS ---
+
+>>> CLICK ON ANY CHAT, then press Enter in terminal <<<
+
+============================================================
+WHATSAPP WEB SELECTOR INSPECTION RESULTS
+============================================================
+
+--- SIDE PANEL / CHAT LIST ---
+FOUND: [aria-label='Chat list'] => {'aria-label': 'Chat list', 'role': 'grid', 'tag': 'div', 'class': 'x1y332i5 x1n2onr6 x6ikm8r x10wlt62 x1tiyuxx'}
+
+--- MESSAGE INPUT BOX ---
+FOUND: [contenteditable='true'][data-tab] => {'aria-label': 'Search input textbox', 'data-tab': '3', 'role': 'textbox', 'aria-placeholder': 'Search or start a new chat', 'contenteditable': 'true', 'tag': 'div', 'class': 'x1hx0egp x6ikm8r x1odjw0f x6prxxf x1k6rcq7 x1whj5v'}
+FOUND: [aria-placeholder='Type a message'] => {'aria-label': 'Type to +91 88649 88395', 'data-tab': '10', 'role': 'textbox', 'aria-placeholder': 'Type a message', 'contenteditable': 'true', 'tag': 'div', 'class': 'x1hx0egp x6ikm8r x1odjw0f x1k6rcq7 x6prxxf'}
+FOUND: div[data-tab='10'] => {'aria-label': 'Type to +91 88649 88395', 'data-tab': '10', 'role': 'textbox', 'aria-placeholder': 'Type a message', 'contenteditable': 'true', 'tag': 'div', 'class': 'x1hx0egp x6ikm8r x1odjw0f x1k6rcq7 x6prxxf'}
+FOUND: div[data-tab='6'] => {'data-tab': '6', 'role': 'button', 'tag': 'div', 'class': 'x78zum5 xdt5ytf x1iyjqo2 xl56j7k xeuugli xtnn1bt x9v5kkp xmw7ebm xrdum7p'}
+FOUND: footer [contenteditable='true'] => {'aria-label': 'Type to +91 88649 88395', 'data-tab': '10', 'role': 'textbox', 'aria-placeholder': 'Type a message', 'contenteditable': 'true', 'tag': 'div', 'class': 'x1hx0egp x6ikm8r x1odjw0f x1k6rcq7 x6prxxf'}
+FOUND: [role='textbox'] => {'aria-label': 'Search input textbox', 'data-tab': '3', 'role': 'textbox', 'aria-placeholder': 'Search or start a new chat', 'contenteditable': 'true', 'tag': 'div', 'class': 'x1hx0egp x6ikm8r x1odjw0f x6prxxf x1k6rcq7 x1whj5v'}
+
+--- SEND BUTTON ---
+
+--- ATTACH BUTTON ---
+
+--- FILE INPUTS ---
+File Input 1: {'accept': 'image/*', 'type': 'file', 'tag': 'input'}
+
+--- CLICKING ATTACH BUTTON ---
+
+--- ATTACH MENU OPTIONS ---
+
+--- FILE INPUTS AFTER ATTACH ---
+File Input 1: {'accept': 'image/*', 'type': 'file', 'tag': 'input'}
+
+============================================================
+INSPECTION COMPLETE
+Results saved to: selectors_output.txt
+============================================================
+
+Press Enter to close browser...
+
+Done!

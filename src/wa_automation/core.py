@@ -1,20 +1,64 @@
 import os
 import time
+import random
 import shutil
 import logging
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
+import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
-from webdriver_manager.chrome import ChromeDriverManager
 from .exceptions import WhatsAppAuthenticationError, WhatsAppLoadError, MessageSendError
+
+# Selector configurations with fallbacks (primary first)
+SEND_BUTTON_SELECTORS = [
+    (By.CSS_SELECTOR, "span[data-icon='send']"),
+    (By.CSS_SELECTOR, "button[aria-label='Send']"),
+    (By.CSS_SELECTOR, "[data-testid='send']"),
+    (By.CSS_SELECTOR, "span[data-testid='send']"),
+    (By.XPATH, "//span[@data-icon='send']"),
+    (By.XPATH, "//button[@aria-label='Send']"),
+]
+
+ATTACH_BUTTON_SELECTORS = [
+    (By.CSS_SELECTOR, "div[data-tab='6']"),  # Confirmed from inspection
+    (By.CSS_SELECTOR, "span[data-icon='plus']"),
+    (By.CSS_SELECTOR, "span[data-icon='clip']"),
+    (By.CSS_SELECTOR, "[data-testid='conversation-clip']"),
+    (By.CSS_SELECTOR, "button[title='Attach']"),
+    (By.XPATH, "//span[@data-icon='plus']"),
+    (By.XPATH, "//span[@data-icon='clip']"),
+]
+
+MESSAGE_INPUT_SELECTORS = [
+    (By.CSS_SELECTOR, "div[data-tab='10'][contenteditable='true']"),
+    (By.CSS_SELECTOR, "div[aria-placeholder='Type a message']"),
+    (By.CSS_SELECTOR, "footer div[contenteditable='true']"),
+    (By.XPATH, "//div[@contenteditable='true'][@data-tab='10']"),
+    (By.XPATH, "//div[@aria-placeholder='Type a message']"),
+]
+
+CAPTION_INPUT_SELECTORS = [
+    (By.CSS_SELECTOR, "div[data-tab='10'][contenteditable='true']"),
+    (By.CSS_SELECTOR, "div[aria-placeholder='Add a caption']"),
+    (By.XPATH, "//div[@contenteditable='true'][@data-tab='undefined']"),
+    (By.XPATH, "//div[@aria-placeholder='Add a caption']"),
+]
+
+IMAGE_INPUT_SELECTORS = [
+    (By.CSS_SELECTOR, "input[type='file'][accept='image/*']"),
+    (By.CSS_SELECTOR, "input[type='file'][accept*='image']"),
+    (By.CSS_SELECTOR, "input[type='file'][accept='image/*,video/mp4,video/3gpp,video/quicktime']"),
+]
+
+FILE_INPUT_SELECTORS = [
+    (By.CSS_SELECTOR, "input[type='file'][accept='*']"),
+    (By.CSS_SELECTOR, "input[type='file']:not([accept='image/*'])"),
+]
 
 class WhatsAppAutomation:
     """
-    A class to automate WhatsApp Web operations using Selenium.
+    A class to automate WhatsApp Web operations using undetected-chromedriver.
     
     Args:
         user_data_dir (str, optional): Path to store user data. Defaults to './User_Data'.
@@ -36,26 +80,28 @@ class WhatsAppAutomation:
             try:
                 os.makedirs(self.user_data_dir, exist_ok=True)
                 
-                options = Options()
-                options.add_argument(f"user-data-dir={self.user_data_dir}")
+                options = uc.ChromeOptions()
                 options.add_argument("--no-sandbox")
                 options.add_argument("--disable-dev-shm-usage")
                 options.add_argument("--disable-gpu")
-                options.add_argument("--disable-extensions")
                 options.add_argument("--disable-notifications")
-                options.add_argument("--disable-web-security")
-                options.add_argument("--allow-running-insecure-content")
                 options.add_argument("--window-size=1920,1080")
+                options.add_argument("--disable-session-crashed-bubble")
+                options.add_argument("--no-first-run")
+                options.add_argument("--no-default-browser-check")
 
-                self.driver = webdriver.Chrome(
-                    service=Service(ChromeDriverManager().install()),
-                    options=options
+                self.driver = uc.Chrome(
+                    options=options,
+                    user_data_dir=self.user_data_dir,
+                    use_subprocess=True,
                 )
                 self.driver.maximize_window()
+                time.sleep(2)  # Let browser fully start before navigating
                 self.driver.get("https://web.whatsapp.com")
                 
                 if self.wait_for_initial_load():
                     logging.info("Chrome WebDriver initialized successfully")
+                    self._warm_up_session()
                     return True
                     
             except Exception as e:
@@ -106,6 +152,78 @@ class WhatsAppAutomation:
         except Exception as e:
             raise WhatsAppLoadError(f"Error during initial WhatsApp Web load: {str(e)}")
     
+    def _warm_up_session(self):
+        """Simulate natural browsing before sending messages to avoid detection."""
+        try:
+            logging.info("Warming up session — browsing chats...")
+            print("\n🔄 Warming up session (browsing chats)...")
+            
+            # Wait a bit like a real user would
+            time.sleep(random.uniform(3, 6))
+            
+            # Scroll through the chat list a few times
+            try:
+                chat_pane = self.driver.find_element(By.CSS_SELECTOR, "div[data-testid='pane-side']")
+                for _ in range(random.randint(2, 4)):
+                    scroll_amount = random.randint(200, 500)
+                    self.driver.execute_script(
+                        "arguments[0].scrollTop += arguments[1]",
+                        chat_pane, scroll_amount
+                    )
+                    time.sleep(random.uniform(1, 3))
+                
+                # Scroll back to top
+                self.driver.execute_script("arguments[0].scrollTop = 0", chat_pane)
+                time.sleep(random.uniform(1, 2))
+            except Exception:
+                pass  # If chat pane not found, skip scrolling
+            
+            print("✅ Warm-up complete.\n")
+        except Exception as e:
+            logging.warning(f"Warm-up phase failed (non-critical): {e}")
+
+    def _find_element_with_fallback(self, selectors, timeout=20, clickable=True):
+        """
+        Find an element using multiple fallback selectors.
+        
+        Args:
+            selectors: List of (By, selector) tuples to try
+            timeout: Timeout for each selector attempt
+            clickable: If True, wait for element to be clickable; if False, just presence
+            
+        Returns:
+            WebElement if found, raises TimeoutException if none found
+        """
+        last_exception = None
+        for by, selector in selectors:
+            try:
+                if clickable:
+                    element = WebDriverWait(self.driver, timeout // len(selectors) + 1).until(
+                        EC.element_to_be_clickable((by, selector))
+                    )
+                else:
+                    element = WebDriverWait(self.driver, timeout // len(selectors) + 1).until(
+                        EC.presence_of_element_located((by, selector))
+                    )
+                logging.debug(f"Found element with selector: {selector}")
+                return element
+            except TimeoutException as e:
+                last_exception = e
+                continue
+        raise TimeoutException(f"Could not find element with any of the provided selectors: {[s[1] for s in selectors]}")
+
+    def _insert_text(self, element, text):
+        """
+        Insert text into an element using execCommand('insertText').
+        This properly triggers React's event system without touching the system clipboard.
+        """
+        self.driver.execute_script("""
+            var el = arguments[0];
+            var text = arguments[1];
+            el.focus();
+            el.textContent = '';
+            document.execCommand('insertText', false, text);
+        """, element, text)
           
     def send_message(self, number, message, wait_before_send=1, wait_after_send=5):
         """
@@ -119,30 +237,22 @@ class WhatsAppAutomation:
             bool: True if successful, False otherwise
         """
         try:
-            whatsapp_url = f'https://web.whatsapp.com/send?phone={number}&text&app_absent=0'
+            whatsapp_url = f'https://web.whatsapp.com/send?phone={number}'
             self.driver.get(whatsapp_url)
             
             if not self._wait_for_chat_load():
                 raise WhatsAppLoadError(f"Failed to load chat for number {number}")
 
-            message_box = WebDriverWait(self.driver, 20).until(
-                EC.element_to_be_clickable((By.XPATH, "//div[@contenteditable='true'][@data-tab='10']"))
-            )
+            # Find message input with fallback selectors
+            message_box = self._find_element_with_fallback(MESSAGE_INPUT_SELECTORS, timeout=20)
             
-            self.driver.execute_script(
-                "arguments[0].focus(); "
-                "arguments[0].innerHTML = ''; "
-                "arguments[0].innerHTML = arguments[1]; "
-                "arguments[0].dispatchEvent(new InputEvent('input', "
-                "{ bubbles: true, cancelable: true, inputType: 'insertText', data: arguments[1] }));",
-                message_box, message
-            )
+            # Use execCommand instead of innerHTML to avoid detection
+            self._insert_text(message_box, message)
             
             time.sleep(wait_before_send)
             
-            send_button = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "button[aria-label='Send']"))
-            )
+            # Find send button with fallback selectors
+            send_button = self._find_element_with_fallback(SEND_BUTTON_SELECTORS, timeout=10)
             send_button.click()
             time.sleep(wait_after_send)
             
@@ -164,21 +274,18 @@ class WhatsAppAutomation:
             bool: True if successful, False otherwise
         """
         try:
-            whatsapp_url = f'https://web.whatsapp.com/send?phone={number}&text&app_absent=0'
+            whatsapp_url = f'https://web.whatsapp.com/send?phone={number}'
             self.driver.get(whatsapp_url)
             
             if not self._wait_for_chat_load():
                 raise WhatsAppLoadError(f"Failed to load chat for number {number}")
 
-            attach_button = WebDriverWait(self.driver, 20).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "button[title='Attach']"))
-            )
+            attach_button = self._find_element_with_fallback(ATTACH_BUTTON_SELECTORS, timeout=20)
             attach_button.click()
             time.sleep(1)
 
-            image_input = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='file'][accept='image/*,video/mp4,video/3gpp,video/quicktime']"))
-            )
+            # Find image input with fallback selectors
+            image_input = self._find_element_with_fallback(IMAGE_INPUT_SELECTORS, timeout=10, clickable=False)
             image_input.send_keys(os.path.abspath(image_path))
             time.sleep(2)
 
@@ -187,19 +294,11 @@ class WhatsAppAutomation:
                     EC.element_to_be_clickable((By.XPATH, "//div[@contenteditable='true'][@data-tab='undefined']"))
                 )
                 
-                self.driver.execute_script(
-                    "arguments[0].focus(); "
-                    "arguments[0].innerHTML = ''; "
-                    "arguments[0].innerHTML = arguments[1]; "
-                    "arguments[0].dispatchEvent(new InputEvent('input', "
-                    "{ bubbles: true, cancelable: true, inputType: 'insertText', data: arguments[1] }));",
-                    caption_box, caption
-                )
+                # Use execCommand instead of innerHTML
+                self._insert_text(caption_box, caption)
                 time.sleep(wait_before_send)  
 
-            send_button = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "button[aria-label='Send']"))
-            )
+            send_button = self._find_element_with_fallback(SEND_BUTTON_SELECTORS, timeout=10)
             send_button.click()
             time.sleep(wait_after_send)
             
@@ -221,21 +320,18 @@ class WhatsAppAutomation:
             bool: True if successful, False otherwise
         """
         try:
-            whatsapp_url = f'https://web.whatsapp.com/send?phone={number}&text&app_absent=0'
+            whatsapp_url = f'https://web.whatsapp.com/send?phone={number}'
             self.driver.get(whatsapp_url)
             
             if not self._wait_for_chat_load():
                 raise WhatsAppLoadError(f"Failed to load chat for number {number}")
 
-            attach_button = WebDriverWait(self.driver, 20).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "button[title='Attach']"))
-            )
+            attach_button = self._find_element_with_fallback(ATTACH_BUTTON_SELECTORS, timeout=20)
             attach_button.click()
             time.sleep(1)
 
-            file_input = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='file'][accept='*']"))
-            )
+            # Find file input with fallback selectors
+            file_input = self._find_element_with_fallback(FILE_INPUT_SELECTORS, timeout=10, clickable=False)
             file_input.send_keys(os.path.abspath(file_path))
             time.sleep(2)
 
@@ -244,19 +340,11 @@ class WhatsAppAutomation:
                     EC.element_to_be_clickable((By.XPATH, "//div[@contenteditable='true'][@data-tab='undefined']"))
                 )
                 
-                self.driver.execute_script(
-                    "arguments[0].focus(); "
-                    "arguments[0].innerHTML = ''; "
-                    "arguments[0].innerHTML = arguments[1]; "
-                    "arguments[0].dispatchEvent(new InputEvent('input', "
-                    "{ bubbles: true, cancelable: true, inputType: 'insertText', data: arguments[1] }));",
-                    caption_box, caption
-                )
+                # Use execCommand instead of innerHTML
+                self._insert_text(caption_box, caption)
                 time.sleep(wait_before_send) 
 
-            send_button = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "button[aria-label='Send']"))
-            )
+            send_button = self._find_element_with_fallback(SEND_BUTTON_SELECTORS, timeout=10)
             send_button.click()
             
             # Wait for upload to complete
@@ -278,6 +366,7 @@ class WhatsAppAutomation:
         try:
             WebDriverWait(self.driver, timeout).until(
                 EC.any_of(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-tab='10'][contenteditable='true']")),
                     EC.presence_of_element_located((By.CSS_SELECTOR, "div[aria-placeholder='Type a message']")),
                     EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Phone number shared via url is invalid')]")),
                     EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-testid='chat']"))
@@ -293,8 +382,13 @@ class WhatsAppAutomation:
             return False
 
     def cleanup(self):
-        """Close the browser and clean up resources"""
+        """Close the browser and clean up Chrome processes. Does NOT delete user data (preserves WhatsApp session)."""
         if self.driver:
-            self.driver.quit()
-        if os.path.exists(self.user_data_dir):
-            shutil.rmtree(self.user_data_dir)
+            try:
+                self.driver.quit()
+            except Exception:
+                pass
+            self.driver = None
+
+    # Alias for convenience
+    close = cleanup
