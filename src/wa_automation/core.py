@@ -94,6 +94,7 @@ class WhatsAppAutomation:
                     options=options,
                     user_data_dir=self.user_data_dir,
                     use_subprocess=True,
+                    version_main=146,  # Force version 146 to match installed browser
                 )
                 self.driver.maximize_window()
                 time.sleep(2)  # Let browser fully start before navigating
@@ -214,15 +215,26 @@ class WhatsAppAutomation:
 
     def _insert_text(self, element, text):
         """
-        Insert text into an element using execCommand('insertText').
-        This properly triggers React's event system without touching the system clipboard.
+        Insert text into an element using a synthetic paste event.
+        This properly triggers WhatsApp's Lexical editor to parse formatting and newlines
+        without touching the user's actual system clipboard.
         """
         self.driver.execute_script("""
             var el = arguments[0];
             var text = arguments[1];
+            
             el.focus();
-            el.textContent = '';
-            document.execCommand('insertText', false, text);
+            document.execCommand('selectAll', false, null);
+            document.execCommand('delete', false, null);
+            
+            var dataTransfer = new DataTransfer();
+            dataTransfer.setData('text/plain', text);
+            var event = new ClipboardEvent('paste', {
+                clipboardData: dataTransfer,
+                bubbles: true,
+                cancelable: true
+            });
+            el.dispatchEvent(event);
         """, element, text)
           
     def send_message(self, number, message, wait_before_send=1, wait_after_send=5):
