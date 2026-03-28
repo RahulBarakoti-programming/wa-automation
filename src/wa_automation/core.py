@@ -171,7 +171,7 @@ class WhatsAppAutomation:
                 qr_code = self.driver.find_element(By.CSS_SELECTOR, "canvas[aria-label='Scan this QR code to link a device!']")
                 print("\n=== Please scan the QR code with your WhatsApp phone app ===")
                 
-                WebDriverWait(self.driver, 60).until(
+                WebDriverWait(self.driver, 120).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, "div[aria-label='Chat list']"))
                 )
                 time.sleep(5)
@@ -180,7 +180,7 @@ class WhatsAppAutomation:
                 
             except NoSuchElementException:
                 try:
-                    WebDriverWait(self.driver, 10).until(
+                    WebDriverWait(self.driver, 30).until(
                         EC.presence_of_element_located((By.CSS_SELECTOR, "div[aria-label='Chat list']"))
                     )
                     self.is_authenticated = True
@@ -221,7 +221,7 @@ class WhatsAppAutomation:
         except Exception as e:
             logging.warning(f"Warm-up phase failed (non-critical): {e}")
 
-    def _find_element_with_fallback(self, selectors, timeout=10, clickable=True):
+    def _find_element_with_fallback(self, selectors, timeout=30, clickable=True):
         """
         Find an element using multiple fallback selectors.
         
@@ -294,7 +294,7 @@ class WhatsAppAutomation:
                 raise WhatsAppLoadError(f"Failed to load chat for number {number}")
 
             # Find message input with fallback selectors
-            message_box = self._find_element_with_fallback(MESSAGE_INPUT_SELECTORS, timeout=10)
+            message_box = self._find_element_with_fallback(MESSAGE_INPUT_SELECTORS, timeout=30)
             
             # Use execCommand instead of innerHTML to avoid detection
             self._insert_text(message_box, message)
@@ -302,7 +302,7 @@ class WhatsAppAutomation:
             time.sleep(wait_before_send)
             
             # Find send button with fallback selectors
-            send_button = self._find_element_with_fallback(SEND_BUTTON_SELECTORS, timeout=10)
+            send_button = self._find_element_with_fallback(SEND_BUTTON_SELECTORS, timeout=30)
             send_button.click()
             time.sleep(wait_after_send)
             
@@ -330,17 +330,17 @@ class WhatsAppAutomation:
             if not self._wait_for_chat_load():
                 raise WhatsAppLoadError(f"Failed to load chat for number {number}")
 
-            attach_button = self._find_element_with_fallback(ATTACH_BUTTON_SELECTORS, timeout=20)
+            attach_button = self._find_element_with_fallback(ATTACH_BUTTON_SELECTORS, timeout=30)
             attach_button.click()
             time.sleep(1)
 
             # Find image input with fallback selectors
-            image_input = self._find_element_with_fallback(IMAGE_INPUT_SELECTORS, timeout=10, clickable=False)
+            image_input = self._find_element_with_fallback(IMAGE_INPUT_SELECTORS, timeout=30, clickable=False)
             image_input.send_keys(os.path.abspath(image_path))
             time.sleep(2)
 
             if caption:
-                caption_box = WebDriverWait(self.driver, 20).until(
+                caption_box = WebDriverWait(self.driver, 30).until(
                     EC.element_to_be_clickable((By.XPATH, "//div[@contenteditable='true'][@data-tab='undefined']"))
                 )
                 
@@ -348,7 +348,7 @@ class WhatsAppAutomation:
                 self._insert_text(caption_box, caption)
                 time.sleep(wait_before_send)  
 
-            send_button = self._find_element_with_fallback(SEND_BUTTON_SELECTORS, timeout=10)
+            send_button = self._find_element_with_fallback(SEND_BUTTON_SELECTORS, timeout=30)
             send_button.click()
             time.sleep(wait_after_send)
             
@@ -376,17 +376,17 @@ class WhatsAppAutomation:
             if not self._wait_for_chat_load():
                 raise WhatsAppLoadError(f"Failed to load chat for number {number}")
 
-            attach_button = self._find_element_with_fallback(ATTACH_BUTTON_SELECTORS, timeout=20)
+            attach_button = self._find_element_with_fallback(ATTACH_BUTTON_SELECTORS, timeout=30)
             attach_button.click()
             time.sleep(1)
 
             # Find file input with fallback selectors
-            file_input = self._find_element_with_fallback(FILE_INPUT_SELECTORS, timeout=10, clickable=False)
+            file_input = self._find_element_with_fallback(FILE_INPUT_SELECTORS, timeout=30, clickable=False)
             file_input.send_keys(os.path.abspath(file_path))
             time.sleep(2)
 
             if caption:
-                caption_box = WebDriverWait(self.driver, 20).until(
+                caption_box = WebDriverWait(self.driver, 30).until(
                     EC.element_to_be_clickable((By.XPATH, "//div[@contenteditable='true'][@data-tab='undefined']"))
                 )
                 
@@ -394,14 +394,14 @@ class WhatsAppAutomation:
                 self._insert_text(caption_box, caption)
                 time.sleep(wait_before_send) 
 
-            send_button = self._find_element_with_fallback(SEND_BUTTON_SELECTORS, timeout=10)
+            send_button = self._find_element_with_fallback(SEND_BUTTON_SELECTORS, timeout=30)
             send_button.click()
             
             # Wait for upload to complete
-            WebDriverWait(self.driver, 10).until(
+            WebDriverWait(self.driver, 30).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "svg.x9tu13d.x1bndym7"))
             )
-            WebDriverWait(self.driver, 120).until_not(
+            WebDriverWait(self.driver, 300).until_not(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "svg.x9tu13d.x1bndym7"))
             )
             
@@ -411,7 +411,7 @@ class WhatsAppAutomation:
         except Exception as e:
             raise MessageSendError(f"Failed to send file: {str(e)}")
 
-    def _wait_for_chat_load(self, timeout=10):
+    def _wait_for_chat_load(self, timeout=45):
         """Internal method to wait for chat to load"""
         try:
             WebDriverWait(self.driver, timeout).until(
@@ -419,7 +419,8 @@ class WhatsAppAutomation:
                     EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-tab='10'][contenteditable='true']")),
                     EC.presence_of_element_located((By.CSS_SELECTOR, "div[aria-placeholder='Type a message']")),
                     EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Phone number shared via url is invalid')]")),
-                    EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-testid='chat']"))
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-testid='chat']")),
+                    EC.presence_of_element_located((By.XPATH, "//div[@contenteditable='true'][@data-tab='10']"))
                 )
             )
             time.sleep(3)
