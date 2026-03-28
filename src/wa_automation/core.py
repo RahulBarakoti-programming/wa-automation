@@ -1,14 +1,50 @@
 import os
+import re
 import time
 import random
 import shutil
 import logging
+import subprocess
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from .exceptions import WhatsAppAuthenticationError, WhatsAppLoadError, MessageSendError
+
+
+def _detect_chrome_version():
+    """Auto-detect the installed Chrome major version from the OS."""
+    try:
+        if os.name == 'nt':  # Windows
+            import winreg
+            for key_path in [
+                r"SOFTWARE\Google\Chrome\BLBeacon",
+                r"SOFTWARE\Wow6432Node\Google\Chrome\BLBeacon",
+            ]:
+                try:
+                    key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path)
+                    version, _ = winreg.QueryValueEx(key, "version")
+                    winreg.CloseKey(key)
+                    major = int(version.split(".")[0])
+                    logging.info(f"Detected Chrome version: {major} (from registry)")
+                    return major
+                except Exception:
+                    continue
+        else:  # Linux / macOS
+            for cmd in ["google-chrome", "google-chrome-stable", "chromium-browser", "chromium"]:
+                try:
+                    out = subprocess.check_output([cmd, "--version"], stderr=subprocess.DEVNULL).decode()
+                    match = re.search(r"(\d+)\.\d+\.\d+\.\d+", out)
+                    if match:
+                        major = int(match.group(1))
+                        logging.info(f"Detected Chrome version: {major}")
+                        return major
+                except Exception:
+                    continue
+    except Exception as e:
+        logging.warning(f"Could not auto-detect Chrome version: {e}")
+    return None
 
 # Selector configurations with fallbacks (primary first)
 SEND_BUTTON_SELECTORS = [
@@ -62,10 +98,12 @@ class WhatsAppAutomation:
     
     Args:
         user_data_dir (str, optional): Path to store user data. Defaults to './User_Data'.
+        chrome_version (int, optional): Chrome major version to use. Auto-detected if not provided.
     """
     
-    def __init__(self, user_data_dir=None):
+    def __init__(self, user_data_dir=None, chrome_version=None):
         self.user_data_dir = os.path.abspath(user_data_dir or "./User_Data")
+        self.chrome_version = chrome_version or _detect_chrome_version()
         self.driver = None
         self.is_authenticated = False
         try:
@@ -94,7 +132,7 @@ class WhatsAppAutomation:
                     options=options,
                     user_data_dir=self.user_data_dir,
                     use_subprocess=True,
-                    version_main=146,  # Force version 146 to match installed browser
+                    version_main=self.chrome_version,
                 )
                 self.driver.maximize_window()
                 time.sleep(2)  # Let browser fully start before navigating
@@ -183,7 +221,7 @@ class WhatsAppAutomation:
         except Exception as e:
             logging.warning(f"Warm-up phase failed (non-critical): {e}")
 
-    def _find_element_with_fallback(self, selectors, timeout=20, clickable=True):
+    def _find_element_with_fallback(self, selectors, timeout=10, clickable=True):
         """
         Find an element using multiple fallback selectors.
         
@@ -256,7 +294,7 @@ class WhatsAppAutomation:
                 raise WhatsAppLoadError(f"Failed to load chat for number {number}")
 
             # Find message input with fallback selectors
-            message_box = self._find_element_with_fallback(MESSAGE_INPUT_SELECTORS, timeout=20)
+            message_box = self._find_element_with_fallback(MESSAGE_INPUT_SELECTORS, timeout=10)
             
             # Use execCommand instead of innerHTML to avoid detection
             self._insert_text(message_box, message)
@@ -373,7 +411,7 @@ class WhatsAppAutomation:
         except Exception as e:
             raise MessageSendError(f"Failed to send file: {str(e)}")
 
-    def _wait_for_chat_load(self, timeout=60):
+    def _wait_for_chat_load(self, timeout=10):
         """Internal method to wait for chat to load"""
         try:
             WebDriverWait(self.driver, timeout).until(

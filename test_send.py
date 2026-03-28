@@ -6,7 +6,7 @@ from wa_automation import WhatsAppAutomation
 def main():
     # Initialize WhatsApp automation
     print("Initializing WhatsApp automation...")
-    wa = WhatsAppAutomation()
+    wa = WhatsAppAutomation(chrome_version=146)
     
     try:
         # Send test message

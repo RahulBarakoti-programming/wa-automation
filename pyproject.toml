@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "wa-automation" 
-version = "0.1.5" 
+version = "0.1.7" 
 authors = [
   { name="Rahul Barakoti", email="rahulbarakoti5@gmail.com" },
 ]
