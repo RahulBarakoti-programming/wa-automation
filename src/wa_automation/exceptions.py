@@ -7,9 +7,33 @@ class WhatsAppAuthenticationError(WhatsAppAutomationError):
     pass
 
 class WhatsAppLoadError(WhatsAppAutomationError):
-    """Raised when WhatsApp Web fails to load properly"""
+    """Raised when WhatsApp Web fails to load."""
     pass
 
 class MessageSendError(WhatsAppAutomationError):
-    """Raised when a message fails to send"""
+    """Raised when failing to send a message."""
+    pass
+
+class InstagramAutomationError(Exception):
+    """Base exception for all Instagram related errors."""
+    pass
+
+class InstagramAuthenticationError(InstagramAutomationError):
+    """Raised when failing to authenticate or login to Instagram."""
+    pass
+
+class InstagramLoadError(InstagramAutomationError):
+    """Raised when Instagram fails to load."""
+    pass
+
+class InstagramActionError(InstagramAutomationError):
+    """Raised when failing to perform a direct action (like, follow)."""
+    pass
+
+class InstagramPostError(InstagramAutomationError):
+    """Raised when failing to upload a post."""
+    pass
+
+class InstagramDMError(InstagramAutomationError):
+    """Raised when failing to send a DM."""
     pass

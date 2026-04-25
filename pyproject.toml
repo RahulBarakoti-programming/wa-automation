@@ -4,11 +4,11 @@ build-backend = "hatchling.build"
 
 [project]
 name = "wa-automation" 
-version = "0.1.7" 
+version = "0.2.0" 
 authors = [
   { name="Rahul Barakoti", email="rahulbarakoti5@gmail.com" },
 ]
-description = "A Python library for WhatsApp Web automation"
+description = "A powerful Python library for WhatsApp Web and Instagram bot automation"
 readme = "README.md"
 readme-content-type = "text/markdown"
 requires-python = ">=3.8"

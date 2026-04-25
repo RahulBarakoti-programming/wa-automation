@@ -1,9 +1,16 @@
 from .core import WhatsAppAutomation
+from .instagram import InstagramAutomation
 from .exceptions import (
     WhatsAppAutomationError,
     WhatsAppAuthenticationError,
     WhatsAppLoadError,
-    MessageSendError
+    MessageSendError,
+    InstagramAutomationError,
+    InstagramAuthenticationError,
+    InstagramLoadError,
+    InstagramActionError,
+    InstagramPostError,
+    InstagramDMError
 )
 
 __version__ = '0.1.5'
@@ -15,5 +22,12 @@ __all__ = [
     'WhatsAppAutomationError',
     'WhatsAppAuthenticationError',
     'WhatsAppLoadError',
-    'MessageSendError'
+    'MessageSendError',
+    'InstagramAutomation',
+    'InstagramAutomationError',
+    'InstagramAuthenticationError',
+    'InstagramLoadError',
+    'InstagramActionError',
+    'InstagramPostError',
+    'InstagramDMError'
 ]

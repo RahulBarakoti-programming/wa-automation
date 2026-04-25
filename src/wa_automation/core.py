@@ -127,6 +127,10 @@ class WhatsAppAutomation:
                 options.add_argument("--disable-session-crashed-bubble")
                 options.add_argument("--no-first-run")
                 options.add_argument("--no-default-browser-check")
+                options.add_argument("--disable-background-timer-throttling")
+                options.add_argument("--disable-backgrounding-occluded-windows")
+                options.add_argument("--disable-renderer-backgrounding")
+                options.add_argument("--disable-features=CalculateNativeWinOcclusion")
 
                 self.driver = uc.Chrome(
                     options=options,
@@ -274,6 +278,65 @@ class WhatsAppAutomation:
             });
             el.dispatchEvent(event);
         """, element, text)
+
+    def _open_chat(self, number):
+        """Try to open chat via UI search to avoid full page reload. Fallback to URL if needed."""
+        try:
+            # Check if we are on the main WA web page
+            if "web.whatsapp.com" not in self.driver.current_url:
+                self.driver.get('https://web.whatsapp.com')
+                WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-testid='pane-side']")))
+            
+            # Attempt UI search
+            new_chat_btn = self._find_element_with_fallback([
+                (By.CSS_SELECTOR, "div[title='New chat']"),
+                (By.CSS_SELECTOR, "span[data-icon='chat']"),
+                (By.XPATH, "//div[@title='New chat']")
+            ], timeout=5)
+            new_chat_btn.click()
+            time.sleep(1)
+            
+            search_box = self._find_element_with_fallback([
+                (By.CSS_SELECTOR, "div[contenteditable='true'][data-tab='3']"),
+            ], timeout=5)
+            
+            search_box.clear()
+            search_box.send_keys(number)
+            time.sleep(3) # Wait for WA to query unsaved number
+            
+            # Press ENTER (\ue007)
+            search_box.send_keys(u'\ue007')
+            
+            # Wait a short bit to see if message box appears
+            time.sleep(2)
+            if self.driver.find_elements(By.CSS_SELECTOR, "div[data-tab='10'][contenteditable='true']"):
+                return True
+                
+            # If not opened by ENTER, look for the 'Chat with X' item
+            try:
+                chat_element = self._find_element_with_fallback([
+                    (By.XPATH, f"//span[@title='{number}']"),
+                    (By.XPATH, f"//div[contains(text(), '{number}')]")
+                ], timeout=5)
+                chat_element.click()
+                time.sleep(2)
+                if self.driver.find_elements(By.CSS_SELECTOR, "div[data-tab='10'][contenteditable='true']"):
+                    return True
+            except:
+                pass
+                
+        except Exception as e:
+            logging.debug(f"UI chat open failed: {e}")
+            pass
+            
+        # Fallback to URL method (guaranteed to work but reloads page)
+        whatsapp_url = f'https://web.whatsapp.com/send?phone={number}'
+        self.driver.get(whatsapp_url)
+        
+        if not self._wait_for_chat_load(timeout=45):
+            raise WhatsAppLoadError(f"Failed to load chat for number {number}")
+        
+        return True
           
     def send_message(self, number, message, wait_before_send=1, wait_after_send=5):
         """
@@ -287,11 +350,7 @@ class WhatsAppAutomation:
             bool: True if successful, False otherwise
         """
         try:
-            whatsapp_url = f'https://web.whatsapp.com/send?phone={number}'
-            self.driver.get(whatsapp_url)
-            
-            if not self._wait_for_chat_load():
-                raise WhatsAppLoadError(f"Failed to load chat for number {number}")
+            self._open_chat(number)
 
             # Find message input with fallback selectors
             message_box = self._find_element_with_fallback(MESSAGE_INPUT_SELECTORS, timeout=30)
@@ -324,11 +383,7 @@ class WhatsAppAutomation:
             bool: True if successful, False otherwise
         """
         try:
-            whatsapp_url = f'https://web.whatsapp.com/send?phone={number}'
-            self.driver.get(whatsapp_url)
-            
-            if not self._wait_for_chat_load():
-                raise WhatsAppLoadError(f"Failed to load chat for number {number}")
+            self._open_chat(number)
 
             attach_button = self._find_element_with_fallback(ATTACH_BUTTON_SELECTORS, timeout=30)
             attach_button.click()
@@ -370,11 +425,7 @@ class WhatsAppAutomation:
             bool: True if successful, False otherwise
         """
         try:
-            whatsapp_url = f'https://web.whatsapp.com/send?phone={number}'
-            self.driver.get(whatsapp_url)
-            
-            if not self._wait_for_chat_load():
-                raise WhatsAppLoadError(f"Failed to load chat for number {number}")
+            self._open_chat(number)
 
             attach_button = self._find_element_with_fallback(ATTACH_BUTTON_SELECTORS, timeout=30)
             attach_button.click()
